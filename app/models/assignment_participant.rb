@@ -97,6 +97,7 @@ class AssignmentParticipant < Participant
     end
   end
 
+  # for each assignment review all scores and determine a max, min and average value
   def merge_scores(scores)
     review_sym = "review".to_sym
     scores[review_sym] = {}
@@ -105,17 +106,21 @@ class AssignmentParticipant < Participant
     total_score = 0
     (1..self.assignment.num_review_rounds).each do |i|
       round_sym = ("review" + i.to_s).to_sym
+      # check if that assignment round is empty 
       next if scores[round_sym].nil? || scores[round_sym][:assessments].nil? || scores[round_sym][:assessments].empty?
       length_of_assessments = scores[round_sym][:assessments].length.to_f
       scores[review_sym][:assessments] += scores[round_sym][:assessments]
+      # update the max value if that rounds max exists and is higher than the current max
       if !scores[round_sym][:scores][:max].nil? && scores[review_sym][:scores][:max] < scores[round_sym][:scores][:max]
         scores[review_sym][:scores][:max] = scores[round_sym][:scores][:max]
       end
+      # update the min value if that rounds min exists and is lower than the current min
       if !scores[round_sym][:scores][:min].nil? && scores[review_sym][:scores][:min] > scores[round_sym][:scores][:min]
         scores[review_sym][:scores][:min] = scores[round_sym][:scores][:min]
       end
       total_score += scores[round_sym][:scores][:avg] * length_of_assessments unless scores[round_sym][:scores][:avg].nil?
     end
+    # if the scores max and min weren't updated set them to zero.
     if scores[review_sym][:scores][:max] == -999_999_999 && scores[review_sym][:scores][:min] == 999_999_999
       scores[review_sym][:scores][:max] = 0
       scores[review_sym][:scores][:min] = 0
@@ -123,6 +128,7 @@ class AssignmentParticipant < Participant
     scores[review_sym][:scores][:avg] = total_score / scores[review_sym][:assessments].length.to_f
   end
 
+  # update the total_score and max_pts_available for micropayment assignments
   def topic_total_scores(scores)
     topic = SignUpTopic.find_by(assignment_id: self.assignment.id)
     return if topic.nil?
@@ -130,6 +136,8 @@ class AssignmentParticipant < Participant
     scores[:max_pts_available] = topic.micropayment
   end
 
+  # update :total_score key in scores hash to user's current grade if they have one
+  # update :total_score key in scores hash to 100 if the current value is greater than 100
   def calculate_scores(scores)
     if self.grade
       scores[:total_score] = self.grade
