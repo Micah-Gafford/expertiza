@@ -157,27 +157,6 @@ describe AssignmentParticipant do
     end
   end
 
-  describe '#calculate_scores' do
-    context 'when the participant has the grade' do
-      it 'his total scores equals his grade' do
-        scores = {}
-        expect(participant2.calculate_scores(scores)).to eq(100.0)
-      end
-    end
-    context 'when the participant has the grade and the total score more than 100' do
-      it 'return the score of a given participant with total score 100' do
-        scores = {total_score: 110}
-        expect(participant.calculate_scores(scores)).to eq(total_score: 100)
-      end
-    end
-    context 'when the participant has the grade and the total score less than 100' do
-      it 'return the score of a given participant with total score' do
-        scores = {total_score: 90}
-        expect(participant.calculate_scores(scores)).to eq(total_score: 90)
-      end
-    end
-  end
-
   describe '#copy' do
     it 'copies assignment participants to a certain course' do
       expect { participant.copy(123) }.to change { CourseParticipant.count }.from(0).to(1)
