@@ -160,10 +160,6 @@ class AssignmentParticipant < Participant
     ReviewResponseMap.get_assessments_for(self.team)
   end
 
-  def reviews_by_reviewer(reviewer)
-    ReviewResponseMap.get_reviewer_assessments_for(self.team, reviewer)
-  end
-
   def quizzes_taken
     QuizResponseMap.get_assessments_for(self)
   end
