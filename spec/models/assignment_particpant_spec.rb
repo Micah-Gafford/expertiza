@@ -27,16 +27,6 @@ describe AssignmentParticipant do
     end
   end
 
-  describe '#review_score' do
-    it 'returns the review score' do
-      allow(review_questionnaire).to receive(:get_assessments_for).with(participant).and_return([response])
-      allow(review_questionnaire).to receive(:questions).and_return([question])
-      allow(Answer).to receive(:compute_scores).with([response], [question]).and_return(max: 95, min: 88, avg: 90)
-      allow(review_questionnaire).to receive(:max_possible_score).and_return(5)
-      expect(participant.review_score).to eq(4.5)
-    end
-  end
-
   describe '#scores' do
     before(:each) do
       allow(AssignmentQuestionnaire).to receive(:find_by).with(assignment_id: 1, questionnaire_id: 1)
@@ -148,16 +138,6 @@ describe AssignmentParticipant do
     end
   end
 
-  describe '#topic_total_scores' do
-    it 'set total_score and max_pts_available of score when topic is not nil' do
-      scores = {total_score: 100}
-      allow(SignUpTopic).to receive(:find_by).with(assignment_id: 1).and_return(double('SignUpTopic', micropayment: 1))
-      participant.topic_total_scores(scores)
-      expect(scores[:total_score]).to eq(1.0)
-      expect(scores[:max_pts_available]).to eq(1)
-    end
-  end
-
   describe '#calculate_scores' do
     context 'when the participant has the grade' do
       it 'his total scores equals his grade' do
@@ -198,13 +178,6 @@ describe AssignmentParticipant do
     it 'returns corrsponding peer review responses given by current team' do
       allow(ReviewResponseMap).to receive(:get_assessments_for).with(team).and_return([response])
       expect(participant.reviews).to eq([response])
-    end
-  end
-
-  describe '#reviews_by_reviewer' do
-    it 'returns corrsponding peer review responses given by certain reviewer' do
-      allow(ReviewResponseMap).to receive(:get_reviewer_assessments_for).with(team, participant).and_return([response])
-      expect(participant.reviews_by_reviewer(participant)).to eq([response])
     end
   end
 
@@ -410,5 +383,52 @@ describe AssignmentParticipant do
         end
       end
     end
+  end
+
+
+  describe '#update_max_or_min' do
+    context 'test updating the max' do
+      it 'should not update the max if :max is nil' do
+        scores = {:round1 => {:scores => { :max => nil } }, :review => {:scores => { :max => 90 }}}
+        #Scores[:review][:scores][:max] should not change to nil (currently 90)
+        participant.update_max_or_min(scores, :round1, :review, :max)
+        expect(scores[:review][:scores][:max]).to eq(90) 
+      end
+
+      it 'should update the review max score to the round max score if round was higher' do
+        scores = {:round1 => {:scores => { :max => 90 } }, :review => {:scores => { :max => 80 }}}
+        participant.update_max_or_min(scores, :round1, :review, :max)
+        expect(scores[:review][:scores][:max]).to eq(90) 
+      end
+
+      it 'review max score should be unchanged if round max score is less than review max score' do
+        scores = {:round1 => {:scores => { :max => 70 } }, :review => {:scores => { :max => 80 }}}
+        participant.update_max_or_min(scores, :round1, :review, :max)
+        expect(scores[:review][:scores][:max]).to eq(80) 
+      end
+      
+    end
+    context 'test updating the min' do
+      it 'should not update the min if :min is nil' do
+        scores = {:round1 => {:scores => { :min => nil } }, :review => {:scores => { :min => 90 }}}
+        #Scores[:review][:scores][:max] should not change to nil (currently 90)
+        participant.update_max_or_min(scores, :round1, :review, :min)
+        expect(scores[:review][:scores][:min]).to eq(90) 
+      end
+
+      it 'update the review min score to the round min score if round was less' do
+        scores = {:round1 => {:scores => { :min => 20 } }, :review => {:scores => { :min => 30 }}}
+        participant.update_max_or_min(scores, :round1, :review, :min)
+        expect(scores[:review][:scores][:min]).to eq(20) 
+      end
+
+      it 'review min score should be unchanged if round min score greater than the review min score' do
+        scores = {:round1 => {:scores => { :min => 60 } }, :review => {:scores => { :min => 20 }}}
+        participant.update_max_or_min(scores, :round1, :review, :min)
+        expect(scores[:review][:scores][:min]).to eq(20) 
+      end
+      
+    end
+
   end
 end
